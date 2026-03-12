@@ -1,0 +1,44 @@
+import os
+from openpyxl import Workbook
+import pdfplumber
+import re
+
+directory = 'Orcamentos'
+files = os.listdir(directory)
+files_quantity = len(files)
+
+if files_quantity == 0:
+    raise Exception("No files found in the directory")
+
+wb = Workbook()
+ws = wb.active
+ws.title = 'Orcamentos imports'
+
+ws['A1'] = 'Planilha de Preços Padrão'
+ws['B1'] = 'Num. Operação'
+ws['C1'] = 'Tempo Prep'
+ws['D1'] = 'Tempo Oper'
+ws['E4'] = 'Status'
+
+last_empty_line = 1
+while ws["A" + str(last_empty_line)].value is not None:
+         last_empty_line += 1
+
+for file in files:
+    with pdfplumber.open(directory + "/" + file) as pdf:
+          first_page = pdf.pages[0]
+          pdf_text = first_page.extract_text()
+         
+    inv_number_re_pattern = r'Planilha de Preços Padrão (\d+)'
+
+    match_number = re.search(inv_number_re_pattern, pdf_text)
+
+    if match_number:
+          orcamento_number = match_number.group(1)
+          ws['A{}'.format(last_empty_line)] = orcamento_number
+
+    last_empty_line += 1
+
+
+wb.save("Orcamentos teste.xlsx")
+
